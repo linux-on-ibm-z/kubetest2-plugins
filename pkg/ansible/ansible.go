@@ -7,7 +7,7 @@ import (
 	goexec "os/exec"
 	"path/filepath"
 
-	"github.com/ppc64le-cloud/kubetest2-plugins/data"
+	"github.com/linux-on-ibm-z/kubetest2-plugins/data"
 )
 
 const (
