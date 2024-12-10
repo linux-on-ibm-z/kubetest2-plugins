@@ -1,4 +1,4 @@
-module github.com/ppc64le-cloud/kubetest2-plugins
+module github.com/linux-on-ibm-z/kubetest2-plugins
 
 go 1.23
 
