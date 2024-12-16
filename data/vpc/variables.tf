@@ -42,13 +42,11 @@ variable "vpc_dns_zone" {
   default = "k8s.test"
 }
 
-# amd64: ibm-ubuntu-20-04-3-minimal-amd64-1
 # s390x: ibm-ubuntu-20-04-2-minimal-s390x-1
 variable "node_image" {
   default = "ibm-ubuntu-20-04-2-minimal-s390x-1"
 }
 
-# amd64: bx2-2x8
 # s390x: bz2-2x8
 variable "node_profile" {
   default = "bz2-2x8"

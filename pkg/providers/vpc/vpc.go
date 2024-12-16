@@ -29,6 +29,12 @@ func (p *Provider) Initialize() error {
 
 func (p *Provider) BindFlags(flags *pflag.FlagSet) {
 	flags.StringVar(
+		&p.VPCName, "vpc-name", "", "IBM Cloud VPC name",
+	)
+	flags.StringVar(
+		&p.SubnetName, "vpc-subnet", "", "IBM Cloud VPC subnet",
+	)
+	flags.StringVar(
 		&p.Apikey, "vpc-api-key", "", "IBM Cloud API Key used for accessing the APIs",
 	)
 	flags.StringVar(
