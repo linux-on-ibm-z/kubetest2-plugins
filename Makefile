@@ -3,6 +3,7 @@
 
 # get the repo root and output path
 REPO_ROOT:=$(shell pwd)
+PROVIDER ?= powervs
 export REPO_ROOT
 OUT_DIR=$(REPO_ROOT)/bin
 # record the source commit in the binary, overridable
@@ -14,7 +15,7 @@ INSTALL_DIR?=$(shell $(REPO_ROOT)/hack/goinstalldir.sh)
 # the output binary name, overridden when cross compiling
 BINARY_NAME=kubetest2-tf
 BINARY_PATH=./kubetest2-tf
-BUILD_FLAGS=-trimpath -ldflags="-buildid= -X=github.com/ppc64le-cloud/kubetest2-plugins/kubetest2-tf/deployer.GitTag=$(COMMIT)"
+BUILD_FLAGS=-trimpath -ldflags="-buildid= -X=github.com/ppc64le-cloud/kubetest2-plugins/kubetest2-tf/deployer.GitTag=$(COMMIT) -X=github.com/ppc64le-cloud/kubetest2-plugins/kubetest2-tf/deployer.TargetProvider=$(PROVIDER)"
 # ==============================================================================
 
 install-deployer-tf:

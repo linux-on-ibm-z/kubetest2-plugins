@@ -30,6 +30,7 @@ import (
 	"github.com/ppc64le-cloud/kubetest2-plugins/pkg/providers"
 	"github.com/ppc64le-cloud/kubetest2-plugins/pkg/providers/common"
 	"github.com/ppc64le-cloud/kubetest2-plugins/pkg/providers/powervs"
+	"github.com/ppc64le-cloud/kubetest2-plugins/pkg/providers/vpc"
 	"github.com/ppc64le-cloud/kubetest2-plugins/pkg/terraform"
 
 	"sigs.k8s.io/kubetest2/pkg/metadata"
@@ -47,6 +48,7 @@ const (
 )
 
 var GitTag string
+var TargetProvider string
 
 type AnsibleInventory struct {
 	Masters []string
@@ -103,7 +105,11 @@ func (d *deployer) initialize() error {
 	if err := d.checkDependencies(); err != nil {
 		return err
 	}
-	d.provider = powervs.PowerVSProvider
+	if TargetProvider == "vpc"{
+		d.provider = vpc.VPCProvider
+	} else {
+		d.provider = powervs.PowerVSProvider
+	}
 	common.CommonProvider.Initialize()
 	d.tmpDir = common.CommonProvider.ClusterName
 	if _, err := os.Stat(d.tmpDir); os.IsNotExist(err) {
@@ -150,7 +156,11 @@ func New(opts types.Options) (types.Deployer, *pflag.FlagSet) {
 func bindFlags(d *deployer) *pflag.FlagSet {
 	flags := pflag.NewFlagSet(Name, pflag.ContinueOnError)
 	common.CommonProvider.BindFlags(flags)
-	powervs.PowerVSProvider.BindFlags(flags)
+	if TargetProvider == "vpc" {
+		vpc.VPCProvider.BindFlags(flags)
+	} else {
+		powervs.PowerVSProvider.BindFlags(flags)
+	}
 
 	return flags
 }
@@ -171,8 +181,8 @@ func (d *deployer) Up() error {
 	}
 
 	for i := 0; i <= d.RetryOnTfFailure; i++ {
-		path, err := terraform.Apply(d.tmpDir, "powervs", d.AutoApprove)
-		op, oerr := terraform.Output(d.tmpDir, "powervs")
+		path, err := terraform.Apply(d.tmpDir, TargetProvider, d.AutoApprove)
+		op, oerr := terraform.Output(d.tmpDir, TargetProvider)
 		if err != nil {
 			if i == d.RetryOnTfFailure {
 				fmt.Printf("terraform.Output: %s\nterraform.Output error: %v\n", op, oerr)
@@ -193,7 +203,7 @@ func (d *deployer) Up() error {
 	inventory := AnsibleInventory{}
 	for _, machineType := range []string{"Masters", "Workers"} {
 		var tmp []interface{}
-		op, err := terraform.Output(d.tmpDir, "powervs", "-json", strings.ToLower(machineType))
+		op, err := terraform.Output(d.tmpDir, TargetProvider, "-json", strings.ToLower(machineType))
 
 		if err != nil {
 			return fmt.Errorf("terraform.Output failed: %v", err)
@@ -310,10 +320,11 @@ func setKubeconfig(host string) error {
 }
 
 func (d *deployer) Down() error {
+
 	if err := d.init(); err != nil {
 		return fmt.Errorf("down failed to init: %s", err)
 	}
-	err := terraform.Destroy(d.tmpDir, "powervs", d.AutoApprove)
+	err := terraform.Destroy(d.tmpDir, TargetProvider, d.AutoApprove)
 	if err != nil {
 		if common.CommonProvider.IgnoreDestroy {
 			klog.Infof("terraform.Destroy failed: %v", err)
