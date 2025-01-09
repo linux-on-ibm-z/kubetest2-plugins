@@ -105,10 +105,22 @@ func (d *deployer) initialize() error {
 	if err := d.checkDependencies(); err != nil {
 		return err
 	}
-	if TargetProvider == "vpc"{
+	// Dynamically determine the provider
+	TargetProvider := os.Getenv("TARGET_PROVIDER") // Check for environment variable
+	if TargetProvider == "" {
+		// If environment variable is not set, check the flag
+		flagProvider := ""
+		flagSet := pflag.NewFlagSet("provider", pflag.ContinueOnError)
+		flagSet.StringVar(&flagProvider, "provider", "", "The provider to use (vpc or powervs)")
+		flagSet.Parse(os.Args[1:]) // Parse command-line arguments
+		TargetProvider = flagProvider
+	}
+	if TargetProvider == "vpc" {
 		d.provider = vpc.VPCProvider
-	} else {
+	} else if TargetProvider == "powervs" {
 		d.provider = powervs.PowerVSProvider
+	} else {
+		return fmt.Errorf("unsupported provider: %s. Use --provider=vpc or --provider=powervs", TargetProvider)
 	}
 	common.CommonProvider.Initialize()
 	d.tmpDir = common.CommonProvider.ClusterName
@@ -156,11 +168,8 @@ func New(opts types.Options) (types.Deployer, *pflag.FlagSet) {
 func bindFlags(d *deployer) *pflag.FlagSet {
 	flags := pflag.NewFlagSet(Name, pflag.ContinueOnError)
 	common.CommonProvider.BindFlags(flags)
-	if TargetProvider == "vpc" {
-		vpc.VPCProvider.BindFlags(flags)
-	} else {
-		powervs.PowerVSProvider.BindFlags(flags)
-	}
+	vpc.VPCProvider.BindFlags(flags)
+	powervs.PowerVSProvider.BindFlags(flags)
 
 	return flags
 }
