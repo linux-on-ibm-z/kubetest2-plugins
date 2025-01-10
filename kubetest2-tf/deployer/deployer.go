@@ -48,7 +48,6 @@ const (
 )
 
 var GitTag string
-var TargetProvider string
 
 type AnsibleInventory struct {
 	Masters []string
@@ -191,8 +190,8 @@ func (d *deployer) Up() error {
 	}
 
 	for i := 0; i <= d.RetryOnTfFailure; i++ {
-		path, err := terraform.Apply(d.tmpDir, TargetProvider, d.AutoApprove)
-		op, oerr := terraform.Output(d.tmpDir, TargetProvider)
+		path, err := terraform.Apply(d.tmpDir, d.TargetProvider, d.AutoApprove)
+		op, oerr := terraform.Output(d.tmpDir, d.TargetProvider)
 		if err != nil {
 			if i == d.RetryOnTfFailure {
 				fmt.Printf("terraform.Output: %s\nterraform.Output error: %v\n", op, oerr)
@@ -213,7 +212,7 @@ func (d *deployer) Up() error {
 	inventory := AnsibleInventory{}
 	for _, machineType := range []string{"Masters", "Workers"} {
 		var tmp []interface{}
-		op, err := terraform.Output(d.tmpDir, TargetProvider, "-json", strings.ToLower(machineType))
+		op, err := terraform.Output(d.tmpDir, d.TargetProvider, "-json", strings.ToLower(machineType))
 
 		if err != nil {
 			return fmt.Errorf("terraform.Output failed: %v", err)
@@ -334,7 +333,7 @@ func (d *deployer) Down() error {
 	if err := d.init(); err != nil {
 		return fmt.Errorf("down failed to init: %s", err)
 	}
-	err := terraform.Destroy(d.tmpDir, TargetProvider, d.AutoApprove)
+	err := terraform.Destroy(d.tmpDir, d.TargetProvider, d.AutoApprove)
 	if err != nil {
 		if common.CommonProvider.IgnoreDestroy {
 			klog.Infof("terraform.Destroy failed: %v", err)
