@@ -158,8 +158,8 @@ func New(opts types.Options) (types.Deployer, *pflag.FlagSet) {
 		klog.Fatalf("couldn't parse flagset for deployer struct: %s", err)
 	}
 	klog.InitFlags(nil)
-	flagSet.AddGoFlagSet(goflag.CommandLine)
 	flagSet.StringVar(&d.TargetProvider, "target-provider", "powervs", "The provider to use (vpc or powervs)")
+	flagSet.AddGoFlagSet(goflag.CommandLine)
 	fs := bindFlags(d)
 	flagSet.AddFlagSet(fs)
 	return d, flagSet
