@@ -83,6 +83,7 @@ type deployer struct {
 	Playbook              string            `desc:"name of ansible playbook to be run"`
 	ExtraVars             map[string]string `desc:"Passes extra-vars to ansible playbook, enter a string of key=value pairs"`
 	SetKubeconfig         bool              `desc:"Flag to set kubeconfig"`
+	TargetProvider		  string			`json:"provider value to be used"`
 }
 
 func (d *deployer) Version() string {
@@ -105,22 +106,21 @@ func (d *deployer) initialize() error {
 	if err := d.checkDependencies(); err != nil {
 		return err
 	}
-	// Dynamically determine the provider
-	TargetProvider := os.Getenv("TARGET_PROVIDER") // Check for environment variable
-	if TargetProvider == "" {
-		// If environment variable is not set, check the flag
-		flagProvider := ""
-		flagSet := pflag.NewFlagSet("provider", pflag.ContinueOnError)
-		flagSet.StringVar(&flagProvider, "provider", "", "The provider to use (vpc or powervs)")
-		flagSet.Parse(os.Args[1:]) // Parse command-line arguments
-		TargetProvider = flagProvider
+	// Use the --target-provider flag or fallback to TARGET_PROVIDER environment variable
+	provider := d.TargetProvider
+	if provider == "" {
+		provider = os.Getenv("TARGET_PROVIDER")
 	}
-	if TargetProvider == "vpc" {
+	if provider == "" {
+		return fmt.Errorf("provider not specified. Use --provider or set the TARGET_PROVIDER environment variable")
+	}
+
+	if provider == "vpc" {
 		d.provider = vpc.VPCProvider
-	} else if TargetProvider == "powervs" {
+	} else if provider == "powervs" {
 		d.provider = powervs.PowerVSProvider
 	} else {
-		return fmt.Errorf("unsupported provider: %s. Use --provider=vpc or --provider=powervs", TargetProvider)
+		return fmt.Errorf("unsupported provider: %s. Use --target-provider vpc or --target-provider powervs", provider)
 	}
 	common.CommonProvider.Initialize()
 	d.tmpDir = common.CommonProvider.ClusterName
@@ -160,6 +160,7 @@ func New(opts types.Options) (types.Deployer, *pflag.FlagSet) {
 	}
 	klog.InitFlags(nil)
 	flagSet.AddGoFlagSet(goflag.CommandLine)
+	flagSet.StringVar(&d.TargetProvider, "target-provider", "powervs", "The provider to use (vpc or powervs)")
 	fs := bindFlags(d)
 	flagSet.AddFlagSet(fs)
 	return d, flagSet
