@@ -82,7 +82,7 @@ type deployer struct {
 	Playbook              string            `desc:"name of ansible playbook to be run"`
 	ExtraVars             map[string]string `desc:"Passes extra-vars to ansible playbook, enter a string of key=value pairs"`
 	SetKubeconfig         bool              `desc:"Flag to set kubeconfig"`
-	TargetProvider		  string			`flag:"~target-provider" desc:"provider value to be used(powervs, vpc)"`
+	TargetProvider        string            `desc:"provider value to be used(powervs, vpc)"`
 }
 
 func (d *deployer) Version() string {
@@ -106,12 +106,12 @@ func (d *deployer) initialize() error {
 	if err := d.checkDependencies(); err != nil {
 		return err
 	}
-	
+
 	if d.TargetProvider == "vpc" {
 		d.provider = vpc.VPCProvider
 	} else {
 		d.provider = powervs.PowerVSProvider
-	} 
+	}
 
 	common.CommonProvider.Initialize()
 	d.tmpDir = common.CommonProvider.ClusterName
@@ -145,7 +145,7 @@ func New(opts types.Options) (types.Deployer, *pflag.FlagSet) {
 		RetryOnTfFailure: 1,
 		Playbook:         "install-k8s.yml",
 		SetKubeconfig:    true,
-		TargetProvider: "powervs",
+		TargetProvider:   "powervs",
 	}
 	flagSet, err := gpflag.Parse(d)
 	if err != nil {
