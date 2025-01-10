@@ -106,17 +106,17 @@ func (d *deployer) initialize() error {
 		return err
 	}
 	// Use the --target-provider flag or fallback to TARGET_PROVIDER environment variable
-	provider := d.TargetProvider
-	if provider == "" {
-		provider = os.Getenv("TARGET_PROVIDER")
+	targetProvider := d.TargetProvider
+	if targetProvider == "" {
+		targetProvider = os.Getenv("TARGET_PROVIDER")
 	}
-	if provider == "" {
+	if targetProvider == "" {
 		return fmt.Errorf("provider not specified. Use --provider or set the TARGET_PROVIDER environment variable")
 	}
 
-	if provider == "vpc" {
+	if targetProvider == "vpc" {
 		d.provider = vpc.VPCProvider
-	} else if provider == "powervs" {
+	} else if targetProvider == "powervs" {
 		d.provider = powervs.PowerVSProvider
 	} else {
 		return fmt.Errorf("unsupported provider: %s. Use --target-provider vpc or --target-provider powervs", provider)
