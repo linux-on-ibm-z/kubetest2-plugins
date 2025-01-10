@@ -82,7 +82,7 @@ type deployer struct {
 	Playbook              string            `desc:"name of ansible playbook to be run"`
 	ExtraVars             map[string]string `desc:"Passes extra-vars to ansible playbook, enter a string of key=value pairs"`
 	SetKubeconfig         bool              `desc:"Flag to set kubeconfig"`
-	TargetProvider		  string			`json:"provider value to be used"`
+	TargetProvider		  string			`desc:"provider value to be used(powervs, vpc)"`
 }
 
 func (d *deployer) Version() string {
@@ -106,22 +106,13 @@ func (d *deployer) initialize() error {
 	if err := d.checkDependencies(); err != nil {
 		return err
 	}
-	// Use the --target-provider flag or fallback to TARGET_PROVIDER environment variable
-	targetProvider := d.TargetProvider
-	if targetProvider == "" {
-		targetProvider = os.Getenv("TARGET_PROVIDER")
-	}
-	if targetProvider == "" {
-		return fmt.Errorf("provider not specified. Use --provider or set the TARGET_PROVIDER environment variable")
-	}
-
+	
 	if targetProvider == "vpc" {
 		d.provider = vpc.VPCProvider
-	} else if targetProvider == "powervs" {
-		d.provider = powervs.PowerVSProvider
 	} else {
-		return fmt.Errorf("unsupported provider: %s. Use --target-provider vpc or --target-provider powervs", targetProvider)
-	}
+		d.provider = powervs.PowerVSProvider
+	} 
+
 	common.CommonProvider.Initialize()
 	d.tmpDir = common.CommonProvider.ClusterName
 	if _, err := os.Stat(d.tmpDir); os.IsNotExist(err) {
@@ -154,13 +145,13 @@ func New(opts types.Options) (types.Deployer, *pflag.FlagSet) {
 		RetryOnTfFailure: 1,
 		Playbook:         "install-k8s.yml",
 		SetKubeconfig:    true,
+		TargetProvider: "powervs",
 	}
 	flagSet, err := gpflag.Parse(d)
 	if err != nil {
 		klog.Fatalf("couldn't parse flagset for deployer struct: %s", err)
 	}
 	klog.InitFlags(nil)
-	flagSet.StringVar(&d.TargetProvider, "tar-provider", "powervs", "The provider to use (vpc or powervs)")
 	flagSet.AddGoFlagSet(goflag.CommandLine)
 	fs := bindFlags(d)
 	flagSet.AddFlagSet(fs)
