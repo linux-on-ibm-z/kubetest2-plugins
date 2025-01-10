@@ -96,6 +96,7 @@ func (d *deployer) init() error {
 }
 
 func (d *deployer) initialize() error {
+	fmt.Println("Initialize called")
 	fmt.Println("Check if package dependencies are installed in the environment")
 	if d.commonOptions.ShouldBuild() {
 		if err := d.verifyBuildFlags(); err != nil {
@@ -137,6 +138,7 @@ func (d *deployer) initialize() error {
 var _ types.Deployer = &deployer{}
 
 func New(opts types.Options) (types.Deployer, *pflag.FlagSet) {
+	fmt.Println("New called")
 	d := &deployer{
 		commonOptions: opts,
 		logsDir:       filepath.Join(artifacts.BaseDir(), "logs"),
@@ -158,7 +160,7 @@ func New(opts types.Options) (types.Deployer, *pflag.FlagSet) {
 		klog.Fatalf("couldn't parse flagset for deployer struct: %s", err)
 	}
 	klog.InitFlags(nil)
-	flagSet.StringVar(&d.TargetProvider, "target-provider", "powervs", "The provider to use (vpc or powervs)")
+	flagSet.StringVar(&d.TargetProvider, "tar-provider", "powervs", "The provider to use (vpc or powervs)")
 	flagSet.AddGoFlagSet(goflag.CommandLine)
 	fs := bindFlags(d)
 	flagSet.AddFlagSet(fs)
