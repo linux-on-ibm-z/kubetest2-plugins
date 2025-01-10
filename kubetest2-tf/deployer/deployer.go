@@ -119,7 +119,7 @@ func (d *deployer) initialize() error {
 	} else if targetProvider == "powervs" {
 		d.provider = powervs.PowerVSProvider
 	} else {
-		return fmt.Errorf("unsupported provider: %s. Use --target-provider vpc or --target-provider powervs", provider)
+		return fmt.Errorf("unsupported provider: %s. Use --target-provider vpc or --target-provider powervs", targetProvider)
 	}
 	common.CommonProvider.Initialize()
 	d.tmpDir = common.CommonProvider.ClusterName
