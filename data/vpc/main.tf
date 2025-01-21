@@ -15,7 +15,7 @@ data "ibm_resource_group" "default_group" {
 module "vpc" {
   # Create new vpc and subnet only if vpc_name is not set
   count        = var.vpc_name == "" ? 1 : 0
-  source       = "./vpc"
+  source       = "./vpc-instance"
   cluster_name = var.cluster_name
   zone         = var.vpc_zone
   resource_group = data.ibm_resource_group.default_group.id
