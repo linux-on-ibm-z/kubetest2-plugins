@@ -44,7 +44,7 @@ resource "ibm_is_public_gateway" "gateway" {
   zone           = var.vpc_zone
   resource_group = data.ibm_resource_group.default_group.id
   floating_ip = {
-    id = ibm_is_floating_ip.gateway[0].id
+    id = ibm_is_floating_ip.gateway.id
   }
 }
 
@@ -100,7 +100,7 @@ locals {
 
   subnet_id = var.vpc_name != "" && length(data.ibm_is_subnet.existing_subnet) > 0 ? data.ibm_is_subnet.existing_subnet[0].id : ibm_is_subnet.subnet[0].id
 
-  security_group_id = var.vpc_name != "" && length(data.ibm_is_vpc.existing_vpc) > 0 ? data.ibm_is_vpc.existing_vpc[0].default_security_group : module.vpc_instance.security_group_id
+  security_group_id = var.vpc_name != "" && length(data.ibm_is_vpc.existing_vpc) > 0 ? data.ibm_is_vpc.existing_vpc[0].default_security_group : ibm_is_vpc.vpc[0].security_group_id
 }
 
 # Fetch image for instance template
