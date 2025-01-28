@@ -100,7 +100,7 @@ locals {
 
   subnet_id = var.vpc_name != "" && length(data.ibm_is_subnet.existing_subnet) > 0 ? data.ibm_is_subnet.existing_subnet[0].id : ibm_is_subnet.subnet[0].id
 
-  security_group_id = var.vpc_name != "" && length(data.ibm_is_vpc.existing_vpc) > 0 ? data.ibm_is_vpc.existing_vpc[0].default_security_group : ibm_is_vpc.vpc[0].security_group_id
+  security_group_id = var.vpc_name != "" && length(data.ibm_is_vpc.existing_vpc) > 0 ? data.ibm_is_vpc.existing_vpc[0].default_security_group : ibm_is_vpc.vpc[0].default_security_group
 }
 
 # Fetch image for instance template
