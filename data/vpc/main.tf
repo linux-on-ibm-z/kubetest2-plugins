@@ -2,12 +2,18 @@
 data "ibm_is_vpc" "existing_vpc" {
   count = var.vpc_name != "" ? 1 : 0
   name  = var.vpc_name
+  lifecycle {
+    ignore_errors = true
+  }
 }
 
 # Fetch existing subnet if `vpc_name` and `vpc_subnet_name` are provided
 data "ibm_is_subnet" "existing_subnet" {
   count = var.vpc_name != "" && var.vpc_subnet_name != "" ? 1 : 0
   name  = var.vpc_subnet_name
+  lifecycle {
+    ignore_errors = true
+  }
 }
 
 # Fetch resource group
