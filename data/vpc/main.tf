@@ -15,54 +15,57 @@ data "ibm_resource_group" "default_group" {
   name = var.vpc_resource_group
 }
 
-# Create a new VPC and associated components only if no valid existing VPC is provided
+# Create a new VPC if not found
 resource "ibm_is_vpc" "vpc" {
-  count                       = var.vpc_name == "" || length(data.ibm_is_vpc.existing_vpc) == 0 ? 1 : 0
-  name                        = var.vpc_name == "" ? "${var.cluster_name}-vpc" : var.vpc_name
-  resource_group              = data.ibm_resource_group.default_group.id
+  count = var.vpc_name == "" || length(data.ibm_is_vpc.existing_vpc) == 0 ? 1 : 0
+  name  = var.vpc_name == "" || length(data.ibm_is_vpc.existing_vpc) == 0 ? "${var.cluster_name}-vpc" : var.vpc_name
+  resource_group = data.ibm_resource_group.default_group.id
   default_security_group_name = "${var.cluster_name}-security-group"
 }
 
+# Create a new subnet only if VPC is newly created
 resource "ibm_is_subnet" "subnet" {
-  count                    = var.vpc_name == "" || length(data.ibm_is_vpc.existing_vpc) == 0 ? 1 : 0
-  name                     = "${var.cluster_name}-subnet"
-  vpc                      = ibm_is_vpc.vpc[0].id
-  zone                     = var.vpc_zone
-  resource_group           = data.ibm_resource_group.default_group.id
+  count = length(data.ibm_is_vpc.existing_vpc) == 0 ? 1 : 0
+  name  = "${var.cluster_name}-subnet"
+  vpc   = length(data.ibm_is_vpc.existing_vpc) > 0 ? data.ibm_is_vpc.existing_vpc[0].id : ibm_is_vpc.vpc[0].id
+  zone  = var.vpc_zone
+  resource_group = data.ibm_resource_group.default_group.id
   total_ipv4_address_count = 256
 }
 
+# Floating IP
 resource "ibm_is_floating_ip" "gateway" {
   name           = "${var.cluster_name}-gateway-ip"
   zone           = var.vpc_zone
   resource_group = data.ibm_resource_group.default_group.id
 }
 
+# Public Gateway
 resource "ibm_is_public_gateway" "gateway" {
-  name           = "${var.cluster_name}-gateway"
-  vpc            = ibm_is_vpc.vpc[0].id
-  zone           = var.vpc_zone
+  name  = "${var.cluster_name}-gateway"
+  vpc   = length(data.ibm_is_vpc.existing_vpc) > 0 ? data.ibm_is_vpc.existing_vpc[0].id : ibm_is_vpc.vpc[0].id
+  zone  = var.vpc_zone
   resource_group = data.ibm_resource_group.default_group.id
   floating_ip = {
     id = ibm_is_floating_ip.gateway.id
   }
 }
 
-# Define security group rules (always create them for new VPCs)
+# Security Group Rules
 resource "ibm_is_security_group_rule" "primary_outbound" {
-  group     = ibm_is_vpc.vpc[0].default_security_group
+  group     = local.security_group_id
   direction = "outbound"
   remote    = "0.0.0.0/0"
 }
 
 resource "ibm_is_security_group_rule" "primary_inbound" {
-  group     = ibm_is_vpc.vpc[0].default_security_group
+  group     = local.security_group_id
   direction = "inbound"
   remote    = ibm_is_vpc.vpc[0].default_security_group
 }
 
 resource "ibm_is_security_group_rule" "primary_ssh" {
-  group     = ibm_is_vpc.vpc[0].default_security_group
+  group     = local.security_group_id
   direction = "inbound"
   remote    = "0.0.0.0/0"
 
@@ -73,7 +76,7 @@ resource "ibm_is_security_group_rule" "primary_ssh" {
 }
 
 resource "ibm_is_security_group_rule" "primary_ping" {
-  group     = ibm_is_vpc.vpc[0].default_security_group
+  group     = local.security_group_id
   direction = "inbound"
   remote    = "0.0.0.0/0"
 
@@ -84,7 +87,7 @@ resource "ibm_is_security_group_rule" "primary_ping" {
 }
 
 resource "ibm_is_security_group_rule" "primary_api_server" {
-  group     = ibm_is_vpc.vpc[0].default_security_group
+  group     = local.security_group_id
   direction = "inbound"
   remote    = "0.0.0.0/0"
 
@@ -94,7 +97,7 @@ resource "ibm_is_security_group_rule" "primary_api_server" {
   }
 }
 
-# Local values for determining VPC and Subnet IDs
+# Locals for VPC and Subnet IDs
 locals {
   vpc_id = var.vpc_name != "" && length(data.ibm_is_vpc.existing_vpc) > 0 ? data.ibm_is_vpc.existing_vpc[0].id : ibm_is_vpc.vpc[0].id
 
@@ -103,17 +106,16 @@ locals {
   security_group_id = var.vpc_name != "" && length(data.ibm_is_vpc.existing_vpc) > 0 ? data.ibm_is_vpc.existing_vpc[0].default_security_group : ibm_is_vpc.vpc[0].default_security_group
 }
 
-# Fetch image for instance template
+# Node Image and SSH Key
 data "ibm_is_image" "node_image" {
   name = var.node_image
 }
 
-# Fetch SSH key
 data "ibm_is_ssh_key" "ssh_key" {
   name = var.vpc_ssh_key
 }
 
-# Instance template for nodes
+# Instance Template
 resource "ibm_is_instance_template" "node_template" {
   name           = "${var.cluster_name}-node-template"
   image          = data.ibm_is_image.node_image.id
@@ -125,11 +127,11 @@ resource "ibm_is_instance_template" "node_template" {
 
   primary_network_interface {
     subnet          = local.subnet_id
-    security_groups = [ibm_is_vpc.vpc[0].default_security_group]
+    security_groups = [local.security_group_id]
   }
 }
 
-# Master node module
+# Master and Worker Nodes
 module "master" {
   source                    = "./node"
   node_name                 = "${var.cluster_name}-master"
@@ -137,7 +139,6 @@ module "master" {
   resource_group            = data.ibm_resource_group.default_group.id
 }
 
-# Worker nodes module
 module "workers" {
   source                    = "./node"
   count                     = var.workers_count
@@ -146,6 +147,7 @@ module "workers" {
   resource_group            = data.ibm_resource_group.default_group.id
 }
 
+# Wait for instances to initialize
 resource "null_resource" "wait-for-master-completes" {
   connection {
     type        = "ssh"
