@@ -1,3 +1,3 @@
-variable "cluster_name" {}
+variable "vpc_name" {}
 variable "zone" {}
 variable "resource_group" {}
