@@ -1,30 +1,30 @@
 resource "ibm_is_vpc" "vpc" {
-  name                        = "${var.cluster_name}-vpc"
-  default_security_group_name = "${var.cluster_name}-security-group"
-  resource_group              = var.resource_group
+  name                        = var.vpc_name
+  default_security_group_name = "${var.vpc_name}-security-group"
+  resource_group = "${var.resource_group}"
 }
 
 resource "ibm_is_floating_ip" "gateway" {
-  name           = "${var.cluster_name}-gateway-ip"
-  zone           = var.zone
-  resource_group = var.resource_group
+  name = "${var.vpc_name}-gateway-ip"
+  zone = var.zone
+  resource_group = "${var.resource_group}"
 }
 
 resource "ibm_is_public_gateway" "gateway" {
-  name           = "${var.cluster_name}-gateway"
-  vpc            = ibm_is_vpc.vpc.id
-  zone           = var.zone
-  resource_group = var.resource_group
+  name = "${var.vpc_name}-gateway"
+  vpc  = ibm_is_vpc.vpc.id
+  zone = var.zone
+  resource_group = "${var.resource_group}"
   floating_ip = {
     id = ibm_is_floating_ip.gateway.id
   }
 }
 
 resource "ibm_is_subnet" "primary" {
-  name                     = "${var.cluster_name}-subnet"
+  name                     = "${var.vpc_name}-subnet"
   vpc                      = ibm_is_vpc.vpc.id
   zone                     = var.zone
-  resource_group           = var.resource_group
+  resource_group           = "${var.resource_group}"
   total_ipv4_address_count = 256
   public_gateway           = ibm_is_public_gateway.gateway.id
 }
