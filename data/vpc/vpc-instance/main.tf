@@ -23,7 +23,7 @@ resource "ibm_is_floating_ip" "gateway" {
 
 resource "ibm_is_public_gateway" "gateway" {
   name           = "${var.cluster_name}-gateway"
-  vpc            = local.vpc.id
+  vpc            = local.vpc_id
   zone           = var.zone
   resource_group = var.resource_group
   floating_ip = {
@@ -33,7 +33,7 @@ resource "ibm_is_public_gateway" "gateway" {
 
 resource "ibm_is_subnet" "primary" {
   name                     = "${var.cluster_name}-subnet"
-  vpc                      = local.vpc.id
+  vpc                      = local.vpc_id
   zone                     = var.zone
   resource_group           = var.resource_group
   total_ipv4_address_count = 256
