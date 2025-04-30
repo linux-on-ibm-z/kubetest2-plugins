@@ -1,5 +1,5 @@
 output "vpc_id" {
-  value = ibm_is_vpc.vpc.id
+  value = local.vpc.id
 }
 
 output "subnet_id" {
@@ -7,5 +7,5 @@ output "subnet_id" {
 }
 
 output "security_group_id" {
-  value = ibm_is_vpc.vpc.default_security_group
+  value = local.security_group
 }
